@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Advanced Todo App</title>
+
+  <!-- Bootstrap -->
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  />
+
+  <style>
+    body {
+      background-color: #f4f7fb;
+      font-family: "Roboto", sans-serif;
+    }
+
+    .todo-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .todo-heading {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 30px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      background: #eaf6ff;
+      border-left: 5px solid #007bff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+
+    .todo-text {
+      flex-grow: 1;
+      margin-left: 10px;
+      font-size: 16px;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .filter-buttons button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="todo-container">
+    <h2 class="todo-heading">Todo Application</h2>
+
+    <!-- Input Section -->
+    <div class="input-group mb-3">
+      <input
+        type="text"
+        id="todoInput"
+        class="form-control"
+        placeholder="Enter your task..."
+      />
+      <div class="input-group-append">
+        <button class="btn btn-primary" id="addBtn">Add</button>
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="filter-buttons mb-3 text-center">
+      <button class="btn btn-secondary btn-sm" onclick="filterTodos('all')">All</button>
+      <button class="btn btn-info btn-sm" onclick="filterTodos('active')">Active</button>
+      <button class="btn btn-success btn-sm" onclick="filterTodos('completed')">Completed</button>
+      <button class="btn btn-dark btn-sm" onclick="clearCompleted()">Clear Completed</button>
+    </div>
+
+    <!-- Todo List -->
+    <ul id="todoList" class="list-unstyled"></ul>
+
+  </div>
+
+  <script>
+    const todoInput = document.getElementById("todoInput");
+    const addBtn = document.getElementById("addBtn");
+    const todoListElement = document.getElementById("todoList");
+
+    let todoList = JSON.parse(localStorage.getItem("todos")) || [];
+
+    /* ======================
+       Utility
+    ====================== */
+
+    function saveToLocalStorage() {
+      localStorage.setItem("todos", JSON.stringify(todoList));
+    }
+
+    function generateId() {
+      return Date.now();
+    }
+
+    /* ======================
+       Add Todo
+    ====================== */
+
+    function addTodo() {
+      const text = todoInput.value.trim();
+      if (!text) {
+        alert("Please enter valid text");
+        return;
+      }
+
+      const newTodo = {
+        id: generateId(),
+        text: text,
+        completed: false
+      };
+
+      todoList.push(newTodo);
+      saveToLocalStorage();
+      renderTodos();
+      todoInput.value = "";
+    }
+
+    addBtn.addEventListener("click", addTodo);
+
+    todoInput.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        addTodo();
+      }
+    });
+
+    /* ======================
+       Render Todos
+    ====================== */
+
+    function renderTodos(filter = "all") {
+      todoListElement.innerHTML = "";
+
+      let filteredList = todoList;
+
+      if (filter === "active") {
+        filteredList = todoList.filter(todo => !todo.completed);
+      }
+
+      if (filter === "completed") {
+        filteredList = todoList.filter(todo => todo.completed);
+      }
+
+      filteredList.forEach(todo => {
+        const li = document.createElement("li");
+        li.className = "todo-item";
+
+        li.innerHTML = `
+          <input type="checkbox"
+            ${todo.completed ? "checked" : ""}
+            onchange="toggleStatus(${todo.id})" />
+
+          <span class="todo-text ${todo.completed ? "completed" : ""}">
+            ${todo.text}
+          </span>
+
+          <button class="btn btn-sm btn-warning mr-1"
+            onclick="editTodo(${todo.id})">Edit</button>
+
+          <button class="btn btn-sm btn-danger"
+            onclick="deleteTodo(${todo.id})">Delete</button>
+        `;
+
+        todoListElement.appendChild(li);
+      });
+    }
+
+    /* ======================
+       Toggle Complete
+    ====================== */
+
+    function toggleStatus(id) {
+      const todo = todoList.find(t => t.id === id);
+      todo.completed = !todo.completed;
+      saveToLocalStorage();
+      renderTodos();
+    }
+
+    /* ======================
+       Delete Todo
+    ====================== */
+
+    function deleteTodo(id) {
+      todoList = todoList.filter(todo => todo.id !== id);
+      saveToLocalStorage();
+      renderTodos();
+    }
+
+    /* ======================
+       Edit Todo
+    ====================== */
+
+    function editTodo(id) {
+      const todo = todoList.find(t => t.id === id);
+      const updatedText = prompt("Edit your task:", todo.text);
+
+      if (updatedText !== null && updatedText.trim() !== "") {
+        todo.text = updatedText.trim();
+        saveToLocalStorage();
+        renderTodos();
+      }
+    }
+
+    /* ======================
+       Clear Completed
+    ====================== */
+
+    function clearCompleted() {
+      todoList = todoList.filter(todo => !todo.completed);
+      saveToLocalStorage();
+      renderTodos();
+    }
+
+    /* ======================
+       Filter
+    ====================== */
+
+    function filterTodos(type) {
+      renderTodos(type);
+    }
+
+    /* ======================
+       Initial Load
+    ====================== */
+
+    renderTodos();
+  </script>
+
+</body>
+</html>
